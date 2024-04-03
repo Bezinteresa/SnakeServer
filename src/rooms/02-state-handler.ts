@@ -1,6 +1,11 @@
 import { Room, Client } from "colyseus";
 import { Schema, type, MapSchema } from "@colyseus/schema";
 
+export class Vector2Float {
+    @type("number") x = Math.floor(Math.random() * 256) - 128;
+    @type("number") z = Math.floor(Math.random() * 256) - 128;
+}
+
 export class Player extends Schema {
     @type("number") x = Math.floor(Math.random() * 256) -128;
     @type("number") z = Math.floor(Math.random() * 256) -128;
@@ -12,7 +17,9 @@ export class State extends Schema {
     @type({ map: Player })
     players = new MapSchema<Player>();
 
-    something = "This attribute won't be sent to the client-side";
+    createApple(){
+
+    }
 
     createPlayer(sessionId: string, skin: number) {
         const player = new Player();
@@ -33,6 +40,9 @@ export class State extends Schema {
 
 export class StateHandlerRoom extends Room<State> {
     maxClients = 4;
+
+    startAppleCount = 100;
+    
     skins: number[] = [0];
 
     mixArray(arr){
@@ -55,14 +65,16 @@ export class StateHandlerRoom extends Room<State> {
         }
 
         this.mixArray(this.skins);
-
-        console.log("StateHandlerRoom created!", options);
-
+        
         this.setState(new State());
 
         this.onMessage("move", (client, data) => {
             this.state.movePlayer(client.sessionId, data);
         });
+
+        for(let i = 0; i < this.startAppleCount; i++){
+            this.state.createApple();
+        }
     }
 
     onAuth(client, options, req) {
@@ -70,8 +82,6 @@ export class StateHandlerRoom extends Room<State> {
     }
 
     onJoin (client: Client) {
-
-
 
         const skin = this.skins[this.clients.length -1];
         this.state.createPlayer(client.sessionId, skin);
